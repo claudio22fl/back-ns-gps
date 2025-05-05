@@ -1,0 +1,5 @@
+export interface TSharedCUD {
+  create_at: string;
+  update_at: string;
+  delete_at: string;
+}
