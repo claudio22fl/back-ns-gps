@@ -7,18 +7,18 @@ exports.db = exports.sequelize = void 0;
 const promise_1 = __importDefault(require("mysql2/promise"));
 const sequelize_1 = require("sequelize");
 let pool;
-exports.sequelize = new sequelize_1.Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-    host: process.env.DB_HOST,
+exports.sequelize = new sequelize_1.Sequelize(process.env.DB_NAME || "nsgps", process.env.DB_USER || "root", process.env.DB_PASSWORD || "123456", {
+    host: process.env.DB_HOST || "localhost",
     dialect: "mysql",
-    logging: false, // puedes habilitarlo para ver las queries
+    logging: false,
 });
 const db = async () => {
     if (!pool) {
         pool = promise_1.default.createPool({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME,
+            host: process.env.DB_HOST || "localhost",
+            user: process.env.DB_USER || "root",
+            password: process.env.DB_PASSWORD || "123456",
+            database: process.env.DB_NAME || "nsgps",
             waitForConnections: true,
             connectionLimit: 10,
             queueLimit: 0,
