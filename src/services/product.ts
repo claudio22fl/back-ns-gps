@@ -1,55 +1,61 @@
+import { IPagination } from "../interfaces/shared.iterface";
 import Product from "../models/product";
+import { generateWhereClause } from "../utils/sequelize-filter.util";
 
-export const getAllProducts = async (): Promise<Product[]> => {
-  try {
-    return await Product.findAll();
-  } catch (error) {
-    throw new Error("Error al obtener los productos");
-  }
+export const getAllProducts = async (
+  page: number = 1,
+  limit: number = 10,
+  filterValue: string = ""
+): Promise<{
+  data: Product[];
+  pagination: IPagination;
+}> => {
+  const offset = (page - 1) * limit;
+  const whereClause = generateWhereClause(Product, filterValue);
+
+  const { count: total, rows: data } = await Product.findAndCountAll({
+    where: whereClause,
+    offset,
+    limit,
+  });
+
+  return {
+    data,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
 };
 
 export const getProductById = async (id: number): Promise<Product | null> => {
-  try {
-    return await Product.findByPk(id);
-  } catch (error) {
-    throw new Error("Error al obtener el producto");
-  }
+  return await Product.findByPk(id);
 };
 
 export const createProductService = async (
   productData: Omit<Product, "id">
 ): Promise<Product> => {
-  try {
-    const newProduct = await Product.create(productData as any);
-    return newProduct;
-  } catch (error) {
-    throw new Error("Error al crear el producto");
-  }
+  const newProduct = await Product.create(productData as any);
+  return newProduct;
 };
 
 export const updateProductService = async (
   id: number,
   productData: Partial<Product>
 ): Promise<Product | null> => {
-  try {
-    const product = await Product.findByPk(id);
-    if (!product) return null;
+  const product = await Product.findByPk(id);
+  if (!product) return null;
 
-    await product.update(productData);
-    return product;
-  } catch (error) {
-    throw new Error("Error al actualizar el producto");
-  }
+  await product.update(productData);
+  return product;
 };
 
 export const deleteProductService = async (id: number): Promise<boolean> => {
-  try {
-    const product = await Product.findByPk(id);
-    if (!product) return false;
+  const product = await Product.findByPk(id);
+  if (!product) return false;
 
-    await product.destroy();
-    return true;
-  } catch (error) {
-    throw new Error("Error al eliminar el producto");
-  }
+  await product.destroy();
+  return true;
 };

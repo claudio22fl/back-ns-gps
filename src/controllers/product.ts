@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { IGetProductsBody } from "../interfaces/product.interface";
 import {
   createProductService,
   deleteProductService,
@@ -9,9 +10,21 @@ import {
 import { customResponse } from "../utils/customResponse";
 import { handleHttp } from "../utils/error.handle";
 
-const getProducts = async (req: Request, res: Response) => {
+const getProducts = async (
+  { body }: Request<{}, {}, IGetProductsBody>,
+  res: Response
+) => {
   try {
-    res.send(await getAllProducts());
+    const { page = 1, limit = 10, filerValue } = body;
+    const { data, pagination } = await getAllProducts(page, limit, filerValue);
+
+    customResponse({
+      res,
+      statusCode: 200,
+      data: data.length ? data : undefined,
+      message: "Lista de productos",
+      pagination: pagination,
+    });
   } catch (error) {
     handleHttp(res, "ERROR_GET_PRODUCTS");
   }
@@ -20,7 +33,16 @@ const getProducts = async (req: Request, res: Response) => {
 const getProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    res.send(await getProductById(+id));
+    const product = await getProductById(+id);
+    if (!product) {
+      return handleHttp(res, "PRODUCT_NOT_FOUND", 404);
+    }
+    customResponse({
+      res,
+      statusCode: 200,
+      data: product,
+      message: "Producto encontrado",
+    });
   } catch (error) {
     handleHttp(res, "ERROR_GET_PRODUCT");
   }
@@ -64,7 +86,7 @@ const deleteProduct = async ({ params }: Request, res: Response) => {
       res,
       statusCode: 200,
       message: "Producto eliminado correctamente",
-      data: product,
+      data: true,
     });
   } catch (error) {
     handleHttp(res, "ERROR_DELETE_PRODUCT");

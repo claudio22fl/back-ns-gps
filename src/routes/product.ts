@@ -9,9 +9,9 @@ import {
 
 const router = Router();
 
-router.get("/", getProducts);
+router.post("/", getProducts);
 router.get("/:id", getProduct);
-router.post("/", createProduct);
+router.post("/create", createProduct);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
 
