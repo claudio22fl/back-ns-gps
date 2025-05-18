@@ -68,7 +68,7 @@ const updateClient = async (req, res) => {
             (0, customResponse_1.customResponse)({
                 res,
                 statusCode: 404,
-                message: "Client not found",
+                message: "Update failed, client not found",
                 data: null,
             });
             return;
