@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas
-app.use("/", productRouter);
+app.use("/api", productRouter);
 
 // DB Connection
 sequelize
