@@ -14,6 +14,10 @@ app.use(express.json());
 // Rutas
 app.use("/", productRouter);
 
+app.get("/", (req, res) => {
+  res.send("API funcionando correctamente");
+});
+
 // DB Connection
 sequelize
   .authenticate()

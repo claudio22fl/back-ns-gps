@@ -15,6 +15,9 @@ app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 // Rutas
 app.use("/", routes_1.router);
+app.get("/", (req, res) => {
+    res.send("API funcionando correctamente");
+});
 // DB Connection
 db_1.sequelize
     .authenticate()
