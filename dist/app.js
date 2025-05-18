@@ -14,7 +14,7 @@ const { PORT } = process.env;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 // Rutas
-app.use("/api", routes_1.router);
+app.use("/", routes_1.router);
 // DB Connection
 db_1.sequelize
     .authenticate()
