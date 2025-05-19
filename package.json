@@ -1,22 +1,20 @@
 {
   "name": "back-ventas-ns",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Backend de gestión de ventas y productos",
+  "main": "dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/app.js",
-    "dev": "nodemon ./src/app.ts",
-    "build": "tsc"
+    "dev": "nodemon --watch src --exec ts-node src/app.ts",
+  "build": "tsc",
+  "start": "node dist/app.js",
+  "start:dev": "ts-node src/app.ts",
+  "lint": "eslint . --ext .ts",
+  "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/dotenv": "^8.2.3",
-    "@types/express": "^5.0.1",
-    "@types/multer": "^1.4.12",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -28,7 +26,21 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/dotenv": "^8.2.3",
+    "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.9",
-    "@types/sequelize": "^4.28.20"
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.11.30",
+    "@types/sequelize": "^4.28.20",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }

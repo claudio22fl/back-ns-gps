@@ -1,13 +1,28 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
+    "target": "ES2020",                   // Compatible y moderno
+    "module": "commonjs",                 // Recomendado para Node.js
     "rootDir": "./src",
     "outDir": "./dist",
-    "strict": true,
+
+    "strict": true,                       // Activar todas las comprobaciones estrictas
+    "noImplicitAny": true,                // Evita variables sin tipo explícito
+    "strictNullChecks": true,             // Trata null y undefined con cuidado
+    "strictPropertyInitialization": true, // Obliga a inicializar propiedades de clase
+    "noUnusedLocals": true,               // Advierte variables no usadas
+    "noUnusedParameters": true,           // Advierte parámetros no usados
+    "noImplicitReturns": true,            // Exige return en todas las ramas
+    "noFallthroughCasesInSwitch": true,   // Previene errores en switch-case
+
+    "moduleResolution": "node",           // Para resolver módulos como Node.js
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,                 // Acelera compilación
+
+    "resolveJsonModule": true,            // Permite importar archivos .json
+    "allowSyntheticDefaultImports": true, // Mejor interoperabilidad con ESM
+    "sourceMap": true                     // Útil para debugging con ts-node-dev o nodemon
   },
   "include": ["src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }
