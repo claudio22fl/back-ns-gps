@@ -1,8 +1,8 @@
-import { Op, literal } from "sequelize";
-import { IPerson, IPersonDTO } from "../interfaces/client.interface";
-import { IPagination } from "../interfaces/shared.iterface";
-import { Client } from "../models";
-import ClientCompany from "../models/client-company";
+import { Op, literal } from 'sequelize';
+import { IPerson, IPersonDTO } from '../interfaces/client.interface';
+import { IPagination } from '../interfaces/shared.iterface';
+import { Client } from '../models';
+import ClientCompany from '../models/client-company';
 
 export const createClientService = async (clientData: Partial<IPersonDTO>) => {
   const newClient = await Client.create(clientData as any);
@@ -22,7 +22,7 @@ export const createClientService = async (clientData: Partial<IPersonDTO>) => {
 export const getClientsService = async (
   page: number = 1,
   limit: number = 10,
-  filterValue: string = ""
+  filterValue: string = ''
 ): Promise<{
   data: IPerson[];
   pagination: IPagination;
@@ -34,19 +34,17 @@ export const getClientsService = async (
       [Op.or]: [
         { name: { [Op.like]: `%${filterValue}%` } },
         { dni: { [Op.like]: `%${filterValue}%` } },
-        literal(`
-        EXISTS (
-          SELECT 1 FROM \`company-client\` cc
-          JOIN \`company\` c ON c.id = cc.id_company
-          WHERE cc.id_client = client.id
-          AND (c.name LIKE '%${filterValue}%' OR c.dni LIKE '%${filterValue}%')
-        )
-      `),
+        literal(`EXISTS (
+  SELECT 1 FROM \`client-company\` cc
+  JOIN \`company\` c ON c.id = cc.id_company
+  WHERE cc.id_client = Client.id
+  AND (c.name LIKE '%${filterValue}%' OR c.dni LIKE '%${filterValue}%')
+)`),
       ],
     },
     include: [
       {
-        association: "companies",
+        association: 'companies',
         through: { attributes: [] },
         required: false,
       },
@@ -70,8 +68,8 @@ export const getClientByIdService = async (id: string) => {
   const client = await Client.findByPk(id, {
     include: [
       {
-        association: "companies",
-        attributes: ["id"],
+        association: 'companies',
+        attributes: ['id'],
         through: { attributes: [] },
       },
     ],
@@ -87,10 +85,7 @@ export const getClientByIdService = async (id: string) => {
   };
 };
 
-export const updateClientService = async (
-  id: string,
-  clientData: Partial<IPersonDTO>
-) => {
+export const updateClientService = async (id: string, clientData: Partial<IPersonDTO>) => {
   const client = await Client.findByPk(id);
   if (!client) return null;
 
