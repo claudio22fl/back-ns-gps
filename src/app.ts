@@ -12,9 +12,9 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas
-app.use('/api', productRouter);
+app.use('/', productRouter);
 
-app.get('/api', (_, res) => {
+app.get('/', (_, res) => {
   res.send('API funcionando correctamente');
 });
 
