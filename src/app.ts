@@ -5,16 +5,16 @@ import { sequelize } from './config/db';
 import { router as productRouter } from './routes';
 
 const app = express();
-const { PORT } = process.env;
+const { PORT, ROUTE } = process.env;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
 // Rutas
-app.use('/', productRouter);
+app.use(`/${ROUTE}`, productRouter);
 
-app.get('/', (_, res) => {
+app.get(`/${ROUTE}`, (_, res) => {
   res.send('API funcionando correctamente');
 });
 
