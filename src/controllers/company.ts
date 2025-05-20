@@ -24,9 +24,9 @@ export const getAllCompany = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10, filerValue } = body;
+    const { page = 1, limit = 10, filterValue } = body;
 
-    const { data, pagination } = await getCompaniesService(page, limit, filerValue);
+    const { data, pagination } = await getCompaniesService(page, limit, filterValue);
     customResponse({
       res,
       statusCode: 200,

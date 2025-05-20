@@ -10,15 +10,20 @@ import {
 } from '../services/client';
 import { customResponse } from '../utils/customResponse';
 import { handleHttp } from '../utils/error.handle';
+import { invalidateEntity } from '../utils/invalidateCache';
+import { safeCache } from '../utils/safeCache';
 
 export const getClients = async (
   { body }: Request<{}, {}, IGetProductsBody>,
   res: Response
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10, filerValue } = body;
+    const { page = 1, limit = 10, filterValue } = body;
+    const cacheKey = `client_page=${page}_limit=${limit}_filter=${filterValue || 'all'}`;
+    const { data, pagination } = await safeCache(cacheKey, () =>
+      getClientsService(page, limit, filterValue)
+    );
 
-    const { data, pagination } = await getClientsService(page, limit, filerValue);
     customResponse({
       res,
       statusCode: 200,
@@ -33,7 +38,12 @@ export const getClients = async (
 
 export const getClientById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const client = await getClientByIdService(req.params.id);
+    const client = await safeCache(
+      `client_${req.params.id}`,
+      () => getClientByIdService(req.params.id),
+      5
+    );
+
     if (!client) {
       customResponse({
         res,
@@ -60,8 +70,8 @@ export const createClient = async (
   res: Response
 ): Promise<void> => {
   try {
-    console.log('body', body);
     const newClient = await createClientService(body);
+    invalidateEntity(`client`);
     customResponse({
       res,
       statusCode: 201,
@@ -76,6 +86,7 @@ export const createClient = async (
 export const updateClient = async (req: Request, res: Response): Promise<void> => {
   try {
     const updatedClient = await updateClientService(req.params.id, req.body);
+    invalidateEntity(`client`);
     if (!updatedClient) {
       customResponse({
         res,
@@ -99,6 +110,7 @@ export const updateClient = async (req: Request, res: Response): Promise<void> =
 export const deleteClient = async (req: Request, res: Response): Promise<void> => {
   try {
     const deleted = await deleteClientService(req.params.id);
+    invalidateEntity(`client`);
     if (!deleted) {
       customResponse({
         res,

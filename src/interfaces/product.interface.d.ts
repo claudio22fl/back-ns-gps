@@ -23,11 +23,11 @@ export interface ProductAttributes extends TSharedCUD {
 
 export type ProductCreationAttributes = Optional<
   ProductAttributes,
-  "id" | "created_at" | "updated_at" | "deleted_at"
+  'id' | 'created_at' | 'updated_at' | 'deleted_at'
 >;
 
 export interface IGetProductsBody {
   page?: number;
   limit?: number;
-  filerValue?: string;
+  filterValue?: string;
 }

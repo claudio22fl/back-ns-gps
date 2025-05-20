@@ -12,8 +12,8 @@ import { handleHttp } from '../utils/error.handle';
 
 const getProducts = async ({ body }: Request<{}, {}, IGetProductsBody>, res: Response) => {
   try {
-    const { page = 1, limit = 10, filerValue } = body;
-    const { data, pagination } = await getAllProducts(page, limit, filerValue);
+    const { page = 1, limit = 10, filterValue } = body;
+    const { data, pagination } = await getAllProducts(page, limit, filterValue);
 
     customResponse({
       res,
