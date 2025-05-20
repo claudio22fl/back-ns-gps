@@ -66,11 +66,6 @@ export const getClientsService = async (
     FROM client c
     LEFT JOIN \`company-client\` cc ON c.id = cc.id_client
     LEFT JOIN company co ON co.id = cc.id_company
-    WHERE 
-      c.name LIKE :filter OR 
-      c.dni LIKE :filter OR
-      co.name LIKE :filter OR
-      co.dni LIKE :filter
     GROUP BY c.id
     ORDER BY c.id ASC
     LIMIT :offset, :limit
