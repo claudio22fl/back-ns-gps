@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { getAllUsers } from '../services/user';
 import { customResponse } from '../utils/customResponse';
 import { handleHttp } from '../utils/error.handle';
 
-export const getUsers = async (res: Response) => {
+export const getUsers = async (_: Request, res: Response) => {
   try {
     const response = await getAllUsers();
 

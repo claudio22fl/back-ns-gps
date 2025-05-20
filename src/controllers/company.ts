@@ -4,7 +4,7 @@ import { getAllCompanys, getCompaniesService } from '../services/company';
 import { customResponse } from '../utils/customResponse';
 import { handleHttp } from '../utils/error.handle';
 
-export const getCompany = async (res: Response) => {
+export const getCompany = async (_: Request, res: Response) => {
   try {
     const response = await getAllCompanys();
 
