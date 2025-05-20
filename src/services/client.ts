@@ -1,4 +1,5 @@
-import { Op, literal } from 'sequelize';
+import { QueryTypes } from 'sequelize';
+import { sequelize } from '../config/db';
 import { IPerson, IPersonDTO } from '../interfaces/client.interface';
 import { IPagination } from '../interfaces/shared.iterface';
 import { Client } from '../models';
@@ -29,29 +30,48 @@ export const getClientsService = async (
 }> => {
   const offset = (page - 1) * limit;
 
-  const { count: total, rows: data } = await Client.findAndCountAll({
-    where: {
-      [Op.or]: [
-        { name: { [Op.like]: `%${filterValue}%` } },
-        { dni: { [Op.like]: `%${filterValue}%` } },
-        literal(`EXISTS (
-  SELECT 1 FROM \`client-company\` cc
-  JOIN \`company\` c ON c.id = cc.id_company
-  WHERE cc.id_client = Client.id
-  AND (c.name LIKE '%${filterValue}%' OR c.dni LIKE '%${filterValue}%')
-)`),
-      ],
-    },
-    include: [
-      {
-        association: 'companies',
-        through: { attributes: [] },
-        required: false,
-      },
-    ],
+  const replacements = {
+    filter: `%${filterValue}%`,
     offset,
     limit,
-  });
+  };
+
+  // 1. Traer los datos paginados
+  const data: IPerson[] = await sequelize.query(
+    `
+    SELECT DISTINCT c.* FROM client c
+    LEFT JOIN \`client-company\` cc ON c.id = cc.id_client
+    LEFT JOIN \`company\` co ON co.id = cc.id_company
+    WHERE c.name LIKE :filter
+      OR c.dni LIKE :filter
+      OR co.name LIKE :filter
+      OR co.dni LIKE :filter
+    LIMIT :offset, :limit
+  `,
+    {
+      replacements,
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  // 2. Traer el total para paginación
+  const totalResult: { count: number }[] = await sequelize.query(
+    `
+    SELECT COUNT(DISTINCT c.id) AS count FROM client c
+    LEFT JOIN \`client-company\` cc ON c.id = cc.id_client
+    LEFT JOIN \`company\` co ON co.id = cc.id_company
+    WHERE c.name LIKE :filter
+      OR c.dni LIKE :filter
+      OR co.name LIKE :filter
+      OR co.dni LIKE :filter
+  `,
+    {
+      replacements: { filter: `%${filterValue}%` },
+      type: QueryTypes.SELECT,
+    }
+  );
+
+  const total = totalResult[0].count;
 
   return {
     data,
@@ -63,7 +83,6 @@ export const getClientsService = async (
     },
   };
 };
-
 export const getClientByIdService = async (id: string) => {
   const client = await Client.findByPk(id, {
     include: [
