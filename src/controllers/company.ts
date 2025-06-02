@@ -7,7 +7,6 @@ import { handleHttp } from '../utils/error.handle';
 export const getCompany = async (_: Request, res: Response) => {
   try {
     const response = await getAllCompanys();
-
     customResponse({
       res,
       statusCode: 200,
@@ -25,7 +24,6 @@ export const getAllCompany = async (
 ): Promise<void> => {
   try {
     const { page = 1, limit = 10, filterValue } = body;
-
     const { data, pagination } = await getCompaniesService(page, limit, filterValue);
     customResponse({
       res,
