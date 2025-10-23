@@ -23,7 +23,9 @@ sequelize
   .authenticate()
   .then(() => {
     console.log('✅ Conexión a DB establecida.');
-    return sequelize.sync(); // opcional: { force: true } para reset
+    // Deshabilitar sync para evitar conflictos con DB existente
+    // return sequelize.sync(); // opcional: { force: true } para reset
+    return Promise.resolve();
   })
   .then(() => {
     console.log('✅ Modelos sincronizados.');

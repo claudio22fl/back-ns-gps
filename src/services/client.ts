@@ -139,10 +139,11 @@ export const getClientByIdService = async (id: string) => {
 
   if (!client) return null;
 
-  const companyIds = client.dataValues.companies?.map((c: any) => c.id) || [];
+  const clientJson = client.toJSON() as any;
+  const companyIds = clientJson.companies?.map((c: any) => c.id) || [];
 
   return {
-    ...client.toJSON(),
+    ...clientJson,
     company_ids: companyIds,
   };
 };

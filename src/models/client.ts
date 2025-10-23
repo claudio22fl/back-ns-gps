@@ -1,16 +1,22 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/db";
-import { IPerson } from "../interfaces/client.interface";
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../config/db';
+import { IClientAttributes } from '../interfaces/client.interface';
 
 export class Client
-  extends Model<IPerson, Optional<IPerson, "id">>
-  implements IPerson
+  extends Model<
+    IClientAttributes,
+    Optional<IClientAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>
+  >
+  implements IClientAttributes
 {
   public id!: number;
   public id_user!: number | null;
   public dni!: string | null;
   public name!: string | null;
   public phone!: string | null;
+  // public address!: string | null; // Campo comentado - verificar si existe en DB
+  // public email!: string | null; // Campo comentado - verificar si existe en DB
+  // public city!: string | null; // Campo comentado - verificar si existe en DB
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
   public readonly deleted_at!: Date | null;
@@ -39,6 +45,18 @@ Client.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    // address: {
+    //   type: DataTypes.STRING,
+    //   allowNull: true,
+    // }, // Campo comentado - verificar si existe en DB
+    // email: {
+    //   type: DataTypes.STRING,
+    //   allowNull: true,
+    // }, // Campo comentado - verificar si existe en DB
+    // city: {
+    //   type: DataTypes.STRING,
+    //   allowNull: true,
+    // }, // Campo comentado - verificar si existe en DB
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -56,12 +74,12 @@ Client.init(
   },
   {
     sequelize,
-    tableName: "client",
+    tableName: 'client',
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
     paranoid: true,
-    deletedAt: "deleted_at",
+    deletedAt: 'deleted_at',
   }
 );
 

@@ -1,16 +1,21 @@
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/db";
-import { IPerson } from "../interfaces/client.interface";
+import { DataTypes, Model, Optional } from 'sequelize';
+import { sequelize } from '../config/db';
+import { ICompanyAttributes } from '../interfaces/client.interface';
 
 export class Company
-  extends Model<IPerson, Optional<IPerson, "id">>
-  implements IPerson
+  extends Model<
+    ICompanyAttributes,
+    Optional<ICompanyAttributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>
+  >
+  implements ICompanyAttributes
 {
   public id!: number;
   public id_user!: number | null;
   public dni!: string | null;
   public name!: string | null;
   public phone!: string | null;
+  // public address!: string | null; // Campo comentado - verificar si existe en DB
+  // public email!: string | null; // Campo comentado - verificar si existe en DB
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
   public readonly deleted_at!: Date | null;
@@ -39,6 +44,14 @@ Company.init(
       type: DataTypes.STRING(45),
       allowNull: true,
     },
+    // address: {
+    //   type: DataTypes.STRING(255),
+    //   allowNull: true,
+    // }, // Campo comentado - verificar si existe en DB
+    // email: {
+    //   type: DataTypes.STRING(255),
+    //   allowNull: true,
+    // }, // Campo comentado - verificar si existe en DB
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -55,12 +68,12 @@ Company.init(
   },
   {
     sequelize,
-    tableName: "company",
+    tableName: 'company',
     timestamps: true,
-    createdAt: "created_at",
-    updatedAt: "updated_at",
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
     paranoid: true,
-    deletedAt: "deleted_at",
+    deletedAt: 'deleted_at',
   }
 );
 

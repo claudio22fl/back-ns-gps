@@ -1,43 +1,33 @@
-import { Op, literal } from "sequelize";
-import { IPerson } from "../interfaces/client.interface";
-import { IPagination } from "../interfaces/shared.iterface";
-import { Company } from "../models";
+// import { Op } from 'sequelize'; // No usado por ahora
+import { IPagination } from '../interfaces/shared.iterface';
+import Company from '../models/company';
+import { generateWhereClause } from '../utils/sequelize-filter.util';
 
 export const getAllCompanys = async () => {
   return await Company.findAll({
-    attributes: ["id", "name"],
-    order: [["name", "ASC"]],
+    attributes: ['id', 'name'],
+    order: [['name', 'ASC']],
   });
 };
 
 export const getCompaniesService = async (
   page: number = 1,
   limit: number = 10,
-  filterValue: string = ""
+  filterValue: string = ''
 ): Promise<{
-  data: IPerson[];
+  data: Company[];
   pagination: IPagination;
 }> => {
   const offset = (page - 1) * limit;
 
+  // Usar generateWhereClause para filtrado universal
+  const whereClause = generateWhereClause(Company, filterValue);
+
   const { count: total, rows: data } = await Company.findAndCountAll({
-    where: {
-      [Op.or]: [
-        { name: { [Op.like]: `%${filterValue}%` } },
-        { dni: { [Op.like]: `%${filterValue}%` } },
-        literal(`
-          EXISTS (
-            SELECT 1 FROM \`company-client\` cc
-            JOIN \`client\` cl ON cl.id = cc.id_client
-            WHERE cc.id_company = company.id
-            AND (cl.name LIKE '%${filterValue}%' OR cl.dni LIKE '%${filterValue}%')
-          )
-        `),
-      ],
-    },
+    where: whereClause,
     include: [
       {
-        association: "clients",
+        association: 'clients',
         through: { attributes: [] },
         required: false,
       },
