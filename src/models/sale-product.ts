@@ -1,41 +1,39 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
 
-interface PaymentAttributes {
+interface SaleProductAttributes {
   id: number;
   id_invoice: number;
-  id_type_payment: number;
-  amount: number;
-  payment_date: Date;
-  description: string | null;
-  state: boolean;
+  id_product: number;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date | null;
 }
 
-type PaymentCreationAttributes = Optional<
-  PaymentAttributes,
+type SaleProductCreationAttributes = Optional<
+  SaleProductAttributes,
   'id' | 'created_at' | 'updated_at' | 'deleted_at'
 >;
 
-export class Payment
-  extends Model<PaymentAttributes, PaymentCreationAttributes>
-  implements PaymentAttributes
+export class SaleProduct
+  extends Model<SaleProductAttributes, SaleProductCreationAttributes>
+  implements SaleProductAttributes
 {
   public id!: number;
   public id_invoice!: number;
-  public id_type_payment!: number;
-  public amount!: number;
-  public payment_date!: Date;
-  public description!: string | null;
-  public state!: boolean;
+  public id_product!: number;
+  public quantity!: number;
+  public unit_price!: number;
+  public total_price!: number;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
   public readonly deleted_at!: Date | null;
 }
 
-Payment.init(
+SaleProduct.init(
   {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
@@ -46,26 +44,21 @@ Payment.init(
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
     },
-    id_type_payment: {
+    id_product: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
     },
-    amount: {
+    quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    unit_price: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    payment_date: {
-      type: DataTypes.DATE,
+    total_price: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    state: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
     },
     created_at: DataTypes.DATE,
     updated_at: DataTypes.DATE,
@@ -73,7 +66,7 @@ Payment.init(
   },
   {
     sequelize,
-    tableName: 'payment',
+    tableName: 'invoice_product',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -82,4 +75,4 @@ Payment.init(
   }
 );
 
-export default Payment;
+export default SaleProduct;

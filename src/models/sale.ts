@@ -89,7 +89,7 @@ Sale.init(
   },
   {
     sequelize,
-    tableName: 'sale',
+    tableName: 'invoice',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',

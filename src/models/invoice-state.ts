@@ -1,12 +1,9 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/db';
 
-interface PaymentAttributes {
+interface InvoiceStateAttributes {
   id: number;
-  id_invoice: number;
-  id_type_payment: number;
-  amount: number;
-  payment_date: Date;
+  name: string;
   description: string | null;
   state: boolean;
   created_at?: Date;
@@ -14,20 +11,17 @@ interface PaymentAttributes {
   deleted_at?: Date | null;
 }
 
-type PaymentCreationAttributes = Optional<
-  PaymentAttributes,
+type InvoiceStateCreationAttributes = Optional<
+  InvoiceStateAttributes,
   'id' | 'created_at' | 'updated_at' | 'deleted_at'
 >;
 
-export class Payment
-  extends Model<PaymentAttributes, PaymentCreationAttributes>
-  implements PaymentAttributes
+export class InvoiceState
+  extends Model<InvoiceStateAttributes, InvoiceStateCreationAttributes>
+  implements InvoiceStateAttributes
 {
   public id!: number;
-  public id_invoice!: number;
-  public id_type_payment!: number;
-  public amount!: number;
-  public payment_date!: Date;
+  public name!: string;
   public description!: string | null;
   public state!: boolean;
   public readonly created_at!: Date;
@@ -35,28 +29,17 @@ export class Payment
   public readonly deleted_at!: Date | null;
 }
 
-Payment.init(
+InvoiceState.init(
   {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
       primaryKey: true,
     },
-    id_invoice: {
-      type: DataTypes.INTEGER.UNSIGNED,
+    name: {
+      type: DataTypes.STRING(50),
       allowNull: false,
-    },
-    id_type_payment: {
-      type: DataTypes.INTEGER.UNSIGNED,
-      allowNull: false,
-    },
-    amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    payment_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
+      unique: true,
     },
     description: {
       type: DataTypes.TEXT,
@@ -73,7 +56,7 @@ Payment.init(
   },
   {
     sequelize,
-    tableName: 'payment',
+    tableName: 'invoice-state',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
@@ -82,4 +65,4 @@ Payment.init(
   }
 );
 
-export default Payment;
+export default InvoiceState;

@@ -3,13 +3,13 @@ import { sequelize } from '../config/db';
 
 interface InvoiceAttributes {
   id: number;
-  id_sale: number;
-  invoice_number: string;
-  issue_date: Date;
-  due_date: Date | null;
-  tax_amount: number;
-  total_amount: number;
-  state: boolean;
+  date: Date | null;
+  total: number | null;
+  'id_invoice-state': number | null;
+  is_return: boolean | null;
+  id_client: number | null;
+  id_company: number | null;
+  id_user: number | null;
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date | null;
@@ -25,13 +25,13 @@ export class Invoice
   implements InvoiceAttributes
 {
   public id!: number;
-  public id_sale!: number;
-  public invoice_number!: string;
-  public issue_date!: Date;
-  public due_date!: Date | null;
-  public tax_amount!: number;
-  public total_amount!: number;
-  public state!: boolean;
+  public date!: Date | null;
+  public total!: number | null;
+  public 'id_invoice-state'!: number | null;
+  public is_return!: boolean | null;
+  public id_client!: number | null;
+  public id_company!: number | null;
+  public id_user!: number | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
   public readonly deleted_at!: Date | null;
@@ -40,41 +40,38 @@ export class Invoice
 Invoice.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
-      autoIncrement: true,
+      type: DataTypes.INTEGER,
       primaryKey: true,
-    },
-    id_sale: {
-      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      unique: true,
+      autoIncrement: true,
     },
-    invoice_number: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
-    },
-    issue_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    due_date: {
+    date: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    tax_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-      defaultValue: 0,
+    total: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
-    total_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+    'id_invoice-state': {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
-    state: {
+    is_return: {
       type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: true,
+      allowNull: true,
+    },
+    id_client: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    id_company: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    id_user: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     created_at: DataTypes.DATE,
     updated_at: DataTypes.DATE,

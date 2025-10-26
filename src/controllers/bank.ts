@@ -13,6 +13,7 @@ import { handleHttp } from '../utils/error.handle';
 // GET /bank - Obtener todos los bancos con paginación
 export const getBanks = async (req: Request, res: Response) => {
   try {
+    console.log('🏦 === GET /bank ===');
     const { page = 1, limit = 10, filterValue = '' } = req.query;
 
     const { data, pagination } = await getAllBanks(

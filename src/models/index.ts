@@ -11,10 +11,11 @@ import Device from './device';
 import DeviceAssigned from './device-assigned';
 import Inventory from './inventory';
 import Invoice from './invoice';
+import InvoiceDetail from './invoice-detail';
+import InvoiceState from './invoice-state';
 import Location from './location';
-import Payment from './payment';
+import PaymentInvoice from './payment-invoice';
 import Product from './product';
-import Sale from './sale';
 import Simulation from './simulation';
 import TypePayment from './type-payment';
 import TypeUser from './type-user';
@@ -113,67 +114,86 @@ Product.hasMany(Inventory, {
 
 // ==================== RELACIONES DE VENTAS ====================
 
-// Sale → Client (Many-to-One)
-Sale.belongsTo(Client, {
+// Invoice → Client (Many-to-One)
+Invoice.belongsTo(Client, {
   foreignKey: 'id_client',
   as: 'client',
 });
-Client.hasMany(Sale, {
+Client.hasMany(Invoice, {
   foreignKey: 'id_client',
-  as: 'sales',
+  as: 'invoices',
 });
 
-// Sale → Company (Many-to-One)
-Sale.belongsTo(Company, {
+// Invoice → Company (Many-to-One)
+Invoice.belongsTo(Company, {
   foreignKey: 'id_company',
   as: 'company',
 });
-Company.hasMany(Sale, {
+Company.hasMany(Invoice, {
   foreignKey: 'id_company',
-  as: 'sales',
+  as: 'invoices',
 });
 
-// Sale → User (Many-to-One)
-Sale.belongsTo(User, {
+// Invoice → User (Many-to-One)
+Invoice.belongsTo(User, {
   foreignKey: 'id_user',
   as: 'seller',
 });
-User.hasMany(Sale, {
+User.hasMany(Invoice, {
   foreignKey: 'id_user',
-  as: 'sales',
+  as: 'invoices',
 });
 
-// Invoice → Sale (One-to-One)
-Invoice.belongsTo(Sale, {
-  foreignKey: 'id_sale',
-  as: 'sale',
+// Invoice → InvoiceState (Many-to-One)
+Invoice.belongsTo(InvoiceState, {
+  foreignKey: 'id_invoice-state',
+  as: 'invoiceState',
 });
-Sale.hasOne(Invoice, {
-  foreignKey: 'id_sale',
+InvoiceState.hasMany(Invoice, {
+  foreignKey: 'id_invoice-state',
+  as: 'invoices',
+});
+
+// InvoiceDetail → Invoice (Many-to-One)
+InvoiceDetail.belongsTo(Invoice, {
+  foreignKey: 'id_invoice',
   as: 'invoice',
 });
-
-// Payment → Sale (Many-to-One)
-Payment.belongsTo(Sale, {
-  foreignKey: 'id_sale',
-  as: 'sale',
+Invoice.hasMany(InvoiceDetail, {
+  foreignKey: 'id_invoice',
+  as: 'invoiceDetails',
 });
-Sale.hasMany(Payment, {
-  foreignKey: 'id_sale',
+
+// InvoiceDetail → Product (Many-to-One)
+InvoiceDetail.belongsTo(Product, {
+  foreignKey: 'id_product',
+  as: 'product',
+});
+Product.hasMany(InvoiceDetail, {
+  foreignKey: 'id_product',
+  as: 'invoiceDetails',
+});
+
+// PaymentInvoice → Invoice (Many-to-One)
+PaymentInvoice.belongsTo(Invoice, {
+  foreignKey: 'id_invoice',
+  as: 'invoice',
+});
+Invoice.hasMany(PaymentInvoice, {
+  foreignKey: 'id_invoice',
   as: 'payments',
 });
 
-// Payment → TypePayment (Many-to-One)
-Payment.belongsTo(TypePayment, {
-  foreignKey: 'id_type_payment',
-  as: 'paymentType',
+PaymentInvoice.belongsTo(Bank, {
+  foreignKey: 'id_bank',
+  as: 'bank',
+  constraints: false, // No enforced FK constraint porque id_bank puede ser texto
 });
-TypePayment.hasMany(Payment, {
-  foreignKey: 'id_type_payment',
+Bank.hasMany(PaymentInvoice, {
+  foreignKey: 'id_bank',
   as: 'payments',
+  constraints: false, // No enforced FK constraint porque id_bank puede ser texto
 });
-
-// ==================== RELACIONES DE DISPOSITIVOS ====================
 
 // Location → Device (Many-to-One)
 Location.belongsTo(Device, {
@@ -205,15 +225,8 @@ Client.hasMany(DeviceAssigned, {
   as: 'deviceAssignments',
 });
 
-// DeviceAssigned → Sale (Many-to-One)
-DeviceAssigned.belongsTo(Sale, {
-  foreignKey: 'id_sale',
-  as: 'sale',
-});
-Sale.hasMany(DeviceAssigned, {
-  foreignKey: 'id_sale',
-  as: 'deviceAssignments',
-});
+// DeviceAssigned → Client (Many-to-One) - Manteniendo solo la relación con cliente
+// La relación con Sale se removió porque ahora usamos Invoice
 
 // Simulation → Client (Many-to-One)
 Simulation.belongsTo(Client, {
@@ -249,10 +262,11 @@ export {
   DeviceAssigned,
   Inventory,
   Invoice,
+  InvoiceDetail,
+  InvoiceState,
   Location,
-  Payment,
+  PaymentInvoice,
   Product,
-  Sale,
   Simulation,
   TypePayment,
   TypeUser,
