@@ -24,10 +24,13 @@ class InvoiceService {
         throw new Error(`Cliente con ID ${payload.id_cliente} no encontrado`);
       }
 
-      // Verificar que la empresa existe
-      const company = await Company.findByPk(payload.id_empresa);
-      if (!company) {
-        throw new Error(`Empresa con ID ${payload.id_empresa} no encontrada`);
+      // Verificar que la empresa existe (opcional)
+      let company = null;
+      if (payload.id_empresa) {
+        company = await Company.findByPk(payload.id_empresa);
+        if (!company) {
+          throw new Error(`Empresa con ID ${payload.id_empresa} no encontrada`);
+        }
       }
 
       // Verificar que el usuario existe
@@ -63,7 +66,7 @@ class InvoiceService {
           'id_invoice-state': 1, // Estado "Pagado"
           is_return: false,
           id_client: payload.id_cliente,
-          id_company: payload.id_empresa,
+          id_company: payload.id_empresa || null, // Puede ser null
           id_user: payload.id_usuario,
         },
         { transaction }
@@ -155,9 +158,12 @@ class InvoiceService {
           id: client.id,
           name: client.name || '',
         },
-        company: {
+        company: company ? {
           id: company.id,
           name: company.name || '',
+        } : {
+          id: null,
+          name: 'Sin empresa',
         },
         products: payload.productos.map((p) => ({
           id: p.id,

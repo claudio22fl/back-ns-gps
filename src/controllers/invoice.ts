@@ -10,11 +10,11 @@ class InvoiceController {
       const payload: CreateInvoicePayload = req.body;
 
       // Validaciones básicas
-      if (!payload.id_usuario || !payload.id_cliente || !payload.id_empresa) {
+      if (!payload.id_usuario || !payload.id_cliente) {
         return customResponse({
           res,
           statusCode: 400,
-          message: 'Faltan campos obligatorios: id_usuario, id_cliente, id_empresa',
+          message: 'Faltan campos obligatorios: id_usuario, id_cliente',
         });
       }
 

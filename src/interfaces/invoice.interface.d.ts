@@ -34,7 +34,7 @@ export interface PaymentData {
 export interface CreateInvoicePayload {
   id_usuario: number;
   id_cliente: number;
-  id_empresa: number;
+  id_empresa?: number | null; // Empresa opcional
   fecha_venta: string;
   productos: ProductInvoice[];
   total: number;
@@ -54,7 +54,7 @@ export interface InvoiceResponse {
     name: string;
   };
   company: {
-    id: number;
+    id: number | null;
     name: string;
   };
   products: Array<{
