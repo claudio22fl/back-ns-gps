@@ -158,13 +158,15 @@ class InvoiceService {
           id: client.id,
           name: client.name || '',
         },
-        company: company ? {
-          id: company.id,
-          name: company.name || '',
-        } : {
-          id: null,
-          name: 'Sin empresa',
-        },
+        company: company
+          ? {
+              id: company.id,
+              name: company.name || '',
+            }
+          : {
+              id: null,
+              name: 'Sin empresa',
+            },
         products: payload.productos.map((p) => ({
           id: p.id,
           name: p.name,
