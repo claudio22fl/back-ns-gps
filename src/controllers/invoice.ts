@@ -129,6 +129,44 @@ class InvoiceController {
       return handleHttp(res, 'ERROR_GET_INVOICES', error);
     }
   }
+
+  async generateInvoicePDF(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const invoiceId = parseInt(id);
+
+      if (isNaN(invoiceId)) {
+        return customResponse({
+          res,
+          statusCode: 400,
+          message: 'ID de invoice inválido',
+        });
+      }
+
+      const pdfBase64 = await InvoiceService.generateInvoicePDF(invoiceId);
+
+      if (!pdfBase64) {
+        return customResponse({
+          res,
+          statusCode: 404,
+          message: 'Invoice no encontrado',
+        });
+      }
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: {
+          pdf_base64: pdfBase64,
+          filename: `invoice_${invoiceId}.pdf`,
+        },
+        message: 'PDF de factura generado exitosamente',
+      });
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      return handleHttp(res, 'ERROR_GENERATE_PDF', error);
+    }
+  }
 }
 
 export default new InvoiceController();

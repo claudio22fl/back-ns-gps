@@ -18,6 +18,13 @@ router.post('/', InvoiceController.createInvoice);
 router.get('/:id', InvoiceController.getInvoiceById);
 
 /**
+ * @route GET /invoice/pdf/:id
+ * @desc Generar PDF de factura y devolver en base64
+ * @param id - ID del invoice
+ */
+router.get('/pdf/:id', InvoiceController.generateInvoicePDF);
+
+/**
  * @route GET /invoice
  * @desc Obtener todos los invoices con paginación
  * @query page - Número de página (default: 1)

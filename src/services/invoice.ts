@@ -495,6 +495,254 @@ class InvoiceService {
       throw error;
     }
   }
+
+  async generateInvoicePDF(invoiceId: number): Promise<string | null> {
+    try {
+      // Obtener toda la información del invoice con relaciones
+      const invoice: any = await Invoice.findByPk(invoiceId, {
+        include: [
+          {
+            model: Client,
+            as: 'client',
+            attributes: ['id', 'name', 'dni'],
+          },
+          {
+            model: Company,
+            as: 'company',
+            attributes: ['id', 'name', 'dni'],
+          },
+          {
+            model: User,
+            as: 'seller',
+            attributes: ['id', 'name'],
+          },
+          {
+            model: InvoiceDetail,
+            as: 'invoiceDetails',
+            include: [
+              {
+                model: Product,
+                as: 'product',
+                attributes: ['id', 'name'],
+              },
+            ],
+          },
+          {
+            model: PaymentInvoice,
+            as: 'payments',
+            attributes: ['amount', 'id_bank'],
+            include: [
+              {
+                model: Bank,
+                as: 'bank',
+                attributes: ['name'],
+                required: false,
+              },
+            ],
+          },
+          {
+            model: InvoiceState,
+            as: 'invoiceState',
+            attributes: ['name'],
+          },
+        ],
+      });
+
+      if (!invoice) {
+        return null;
+      }
+
+      // Generar PDF usando PDFKit
+      const PDFDocument = require('pdfkit');
+      const pdf = new PDFDocument({
+        size: [226.77, 600], // 80mm ancho x 600px alto
+        margins: { top: 10, bottom: 10, left: 10, right: 10 },
+      });
+
+      let buffers: Buffer[] = [];
+      pdf.on('data', buffers.push.bind(buffers));
+
+      return new Promise((resolve) => {
+        pdf.on('end', () => {
+          const pdfBuffer = Buffer.concat(buffers);
+          const pdfBase64 = pdfBuffer.toString('base64');
+          resolve(pdfBase64);
+        });
+
+        let currentY = 20;
+
+        // Estado "VENTA" centrado en la parte superior
+        const estado = invoice.invoiceState?.name || 'Pagado';
+        const tienePagoPendiente = invoice.payments?.some((p: any) => p.id_bank === 'pendiente');
+
+        pdf.fontSize(18).font('Helvetica-Bold');
+        let estadoTexto = 'VENTA';
+        if (tienePagoPendiente) {
+          estadoTexto = 'VENTA PENDIENTE';
+        } else if (estado.toLowerCase().includes('devolucion')) {
+          estadoTexto = 'GARANTÍA';
+        }
+
+        pdf.text(estadoTexto, 0, currentY, { align: 'center', width: 226.77 });
+        currentY += 25;
+
+        // Ticket number alineado a la izquierda + Logo centrado
+        pdf.fontSize(10).font('Helvetica-Bold');
+        pdf.text(`Ticket: ${invoice.id}`, 10, currentY);
+
+        try {
+          const logoPath = require('path').join(__dirname, '../../public/img/logo.jpg');
+          pdf.image(logoPath, 70, currentY, { width: 80, height: 40 });
+          currentY += 50;
+        } catch (error: any) {
+          console.log('Logo no encontrado, continuando sin logo:', error.message);
+          currentY += 20;
+        }
+
+        // Información de la empresa
+        pdf.fontSize(8).font('Helvetica-Bold');
+        pdf.text('RUT: ', 10, currentY, { continued: true });
+        pdf.font('Helvetica').text('76.315.978-7');
+        currentY += 12;
+
+        pdf.font('Helvetica-Bold').text('Teléfono: ', 10, currentY, { continued: true });
+        pdf.font('Helvetica').text('2147483647');
+        currentY += 12;
+
+        pdf.font('Helvetica-Bold').text('Dirección: ', 10, currentY, { continued: true });
+        pdf.font('Helvetica').text('Dresden 4248, San Miguel');
+        currentY += 12;
+
+        // Fecha y hora
+        const fecha = new Date(invoice.date || invoice.created_at);
+        pdf.font('Helvetica-Bold').text('Fecha: ', 10, currentY, { continued: true });
+        pdf.font('Helvetica').text(
+          fecha.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
+        );
+        currentY += 12;
+
+        pdf.font('Helvetica-Bold').text('Hora: ', 10, currentY, { continued: true });
+        pdf
+          .font('Helvetica')
+          .text(fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+        currentY += 20;
+
+        // Cliente
+        pdf.fontSize(9).font('Helvetica-Bold');
+        pdf.text('CLIENTE _______________________', 10, currentY);
+        currentY += 15;
+
+        pdf.fontSize(8).font('Helvetica');
+        pdf.text(`Nombre: ${invoice.client?.name || 'NO REGISTRADO'}`, 10, currentY);
+        currentY += 12;
+        pdf.text(`RUT: ${invoice.client?.dni || 'NO REGISTRADO'}`, 10, currentY);
+        currentY += 20;
+
+        // Empresa (si existe)
+        if (invoice.company && invoice.company.name !== 'Sin empresa') {
+          pdf.fontSize(9).font('Helvetica-Bold');
+          pdf.text('EMPRESA _______________________', 10, currentY);
+          currentY += 15;
+
+          pdf.fontSize(8).font('Helvetica');
+          pdf.text(`Nombre: ${invoice.company.name}`, 10, currentY);
+          currentY += 12;
+          pdf.text(`RUT: ${invoice.company.dni || 'NO REGISTRADO'}`, 10, currentY);
+          currentY += 20;
+        }
+
+        // Productos
+        pdf.fontSize(9).font('Helvetica-Bold');
+        pdf.text('Detalle de Productos', 10, currentY);
+        currentY += 15;
+
+        // Encabezados de columnas con más espacio
+        pdf.fontSize(8).font('Helvetica-Bold');
+        pdf.text('Nombre', 10, currentY);
+        pdf.text('Cant', 120, currentY); // Movido más a la izquierda
+        pdf.text('Precio', 150, currentY); // Más espacio
+        pdf.text('Total', 185, currentY); // Más espacio
+        currentY += 12;
+
+        invoice.invoiceDetails?.forEach((detail: any) => {
+          const subtotal = (detail.quantity || 0) * (detail.price_sale || 0);
+          const nombreProducto = detail.product?.name || 'Producto';
+
+          // Nombre del producto (truncar para dejar espacio a las columnas)
+          const nombre =
+            nombreProducto.length > 15 ? nombreProducto.substring(0, 15) : nombreProducto;
+
+          pdf.fontSize(8).font('Helvetica-Bold');
+          pdf.text(nombre, 10, currentY);
+          pdf.text(`${detail.quantity}`, 120, currentY);
+          pdf.text(`$${(detail.price_sale || 0).toLocaleString()}`, 150, currentY);
+          pdf.text(`$${subtotal.toLocaleString()}`, 185, currentY);
+          currentY += 10;
+
+          // Código del producto en línea separada si existe
+          if (detail.product?.codigo) {
+            pdf.fontSize(6).font('Helvetica');
+            pdf.text(detail.product.codigo, 10, currentY);
+            currentY += 8;
+          }
+
+          currentY += 2; // Espacio entre productos
+        });
+
+        currentY += 10;
+
+        // Total
+        pdf.fontSize(12).font('Helvetica-Bold');
+        pdf.text(`TOTAL: $${(invoice.total || 0).toLocaleString()}`, 10, currentY, {
+          align: 'right',
+        });
+        currentY += 25;
+
+        // Métodos de pago
+        pdf.fontSize(9).font('Helvetica-Bold');
+        pdf.text('MÉTODO DE PAGO _______________', 10, currentY);
+        currentY += 15;
+
+        pdf.fontSize(8).font('Helvetica');
+        invoice.payments?.forEach((payment: any) => {
+          let metodoPago = '';
+          if (payment.id_bank === 'Efectivo') {
+            metodoPago = 'Efectivo';
+          } else if (payment.id_bank === 'Pendiente') {
+            metodoPago = 'Pendiente';
+          } else if (payment.id_bank && !isNaN(Number(payment.id_bank))) {
+            metodoPago = payment.bank?.name || 'Transferencia bancaria';
+          } else {
+            metodoPago = 'Método no especificado';
+          }
+
+          if (metodoPago) {
+            pdf.text(`${metodoPago}: $${(payment.amount || 0).toLocaleString()}`, 10, currentY);
+            currentY += 12;
+          }
+        });
+
+        currentY += 10;
+
+        // Vendedor
+        pdf.fontSize(8).font('Helvetica');
+        pdf.text(`Vendedor: ${invoice.seller?.name || 'NO REGISTRADO'}`, 10, currentY, {
+          align: 'center',
+        });
+
+        // Estado ya se renderizó al inicio
+
+        pdf.end();
+      });
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      throw error;
+    }
+  }
 }
 
 export default new InvoiceService();
