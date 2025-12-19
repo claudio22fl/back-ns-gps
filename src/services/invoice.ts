@@ -363,7 +363,7 @@ class InvoiceService {
             attributes: ['quantity'],
           },
         ],
-        order: [['created_at', 'DESC']],
+        order: [['id', 'DESC']],
       });
 
       const invoices = rows.map((invoice: any) => {

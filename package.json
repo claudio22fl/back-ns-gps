@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "start:dev": "ts-node src/app.ts",
+    "migrate-sales": "ts-node src/scripts/migrate-sales.ts",
+    "migrate:sales": "node src/scripts/migrate-all-sales.js",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write ."
   },
