@@ -759,6 +759,8 @@ class InvoiceService {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
 
+      console.log('🔍 [DEBUG] Buscando ventas entre:', today, 'y', tomorrow);
+
       // Ventas del día actual (sin devoluciones)
       const todayInvoices = await Invoice.findAll({
         where: {
@@ -776,9 +778,17 @@ class InvoiceService {
           {
             model: PaymentInvoice,
             as: 'payments',
+            include: [
+              {
+                model: Bank,
+                as: 'bank',
+              },
+            ],
           },
         ],
       });
+
+      console.log(`🔍 [DEBUG] Encontradas ${todayInvoices.length} ventas hoy`);
 
       // Ventas de ayer (sin devoluciones)
       const yesterdayInvoices = await Invoice.findAll({
@@ -824,14 +834,29 @@ class InvoiceService {
         invoice.payments?.forEach((payment: any) => {
           const amount = payment.amount || 0;
           const bankId = payment.id_bank;
+          const bankName = payment.bank?.name?.toLowerCase() || '';
 
-          if (bankId === 'efectivo') {
+          console.log(
+            `💰 [DEBUG] Payment: id_bank="${bankId}", bankName="${bankName}", amount=${amount}`
+          );
+
+          // Verificar si es efectivo (por texto o por nombre del banco)
+          const isEfectivo =
+            (bankId && bankId.toLowerCase() === 'efectivo') || bankName === 'efectivo';
+
+          if (isEfectivo) {
             pagoEfectivo += amount;
-          } else if (bankId !== 'pendiente' && bankId !== 'efectivo') {
+            console.log(`✅ [DEBUG] Sumando a EFECTIVO: ${amount}`);
+          } else if (bankId && bankId.toLowerCase() !== 'pendiente' && !isEfectivo) {
             pagoTransferencia += amount;
+            console.log(`✅ [DEBUG] Sumando a TRANSFERENCIA: ${amount}`);
           }
         });
       });
+
+      console.log(
+        `🔍 [DEBUG] Total Efectivo: ${pagoEfectivo}, Total Transferencia: ${pagoTransferencia}`
+      );
 
       return {
         totalBrutoHoy,
@@ -1043,9 +1068,10 @@ class InvoiceService {
 
             let paymentMethodName = 'Otros';
 
-            if (bankId === 'efectivo') {
+            // Comparación case-insensitive
+            if (bankId && bankId.toLowerCase() === 'efectivo') {
               paymentMethodName = 'Efectivo';
-            } else if (bankId === 'pendiente') {
+            } else if (bankId && bankId.toLowerCase() === 'pendiente') {
               paymentMethodName = 'Pendiente';
             } else if (payment.bank?.name) {
               paymentMethodName = payment.bank.name;
