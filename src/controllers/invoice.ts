@@ -167,6 +167,128 @@ class InvoiceController {
       return handleHttp(res, 'ERROR_GENERATE_PDF', error);
     }
   }
+
+  // ==================== ENDPOINTS DASHBOARD ====================
+
+  /**
+   * GET /api/v1/invoice/dashboard/daily-metrics
+   * Obtiene métricas del día actual
+   */
+  async getDailyMetrics(_req: Request, res: Response) {
+    try {
+      const metrics = await InvoiceService.getDailyMetrics();
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: metrics,
+        message: 'Métricas diarias obtenidas exitosamente',
+      });
+    } catch (error) {
+      console.error('Error en getDailyMetrics:', error);
+      return handleHttp(res, 'ERROR_GET_DAILY_METRICS', error);
+    }
+  }
+
+  /**
+   * GET /api/v1/invoice/dashboard/monthly-metrics
+   * Obtiene métricas del mes actual
+   */
+  async getMonthlyMetrics(_req: Request, res: Response) {
+    try {
+      const metrics = await InvoiceService.getMonthlyMetrics();
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: metrics,
+        message: 'Métricas mensuales obtenidas exitosamente',
+      });
+    } catch (error) {
+      console.error('Error en getMonthlyMetrics:', error);
+      return handleHttp(res, 'ERROR_GET_MONTHLY_METRICS', error);
+    }
+  }
+
+  /**
+   * GET /api/v1/invoice/dashboard/daily-sales
+   * Obtiene ventas diarias del mes actual
+   */
+  async getDailySalesOfMonth(_req: Request, res: Response) {
+    try {
+      const sales = await InvoiceService.getDailySalesOfMonth();
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: sales,
+        message: 'Ventas diarias obtenidas exitosamente',
+      });
+    } catch (error) {
+      console.error('Error en getDailySalesOfMonth:', error);
+      return handleHttp(res, 'ERROR_GET_DAILY_SALES', error);
+    }
+  }
+
+  /**
+   * GET /api/v1/invoice/dashboard/daily-sales-by-payment
+   * Obtiene ventas diarias del mes con desglose por método de pago
+   */
+  async getDailySalesByPaymentMethod(_req: Request, res: Response) {
+    try {
+      const sales = await InvoiceService.getDailySalesByPaymentMethod();
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: sales,
+        message: 'Ventas por método de pago obtenidas exitosamente',
+      });
+    } catch (error) {
+      console.error('Error en getDailySalesByPaymentMethod:', error);
+      return handleHttp(res, 'ERROR_GET_PAYMENT_SALES', error);
+    }
+  }
+
+  /**
+   * GET /api/v1/invoice/dashboard/monthly-sales-comparison
+   * Obtiene comparación de ventas mensuales con año anterior
+   */
+  async getMonthlySalesComparison(_req: Request, res: Response) {
+    try {
+      const sales = await InvoiceService.getMonthlySalesComparison();
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: sales,
+        message: 'Comparación mensual obtenida exitosamente',
+      });
+    } catch (error) {
+      console.error('Error en getMonthlySalesComparison:', error);
+      return handleHttp(res, 'ERROR_GET_MONTHLY_COMPARISON', error);
+    }
+  }
+
+  /**
+   * GET /api/v1/invoice/dashboard/all-metrics
+   * Obtiene todas las métricas del dashboard en una sola llamada
+   */
+  async getAllDashboardMetrics(_req: Request, res: Response) {
+    try {
+      const metrics = await InvoiceService.getAllDashboardMetrics();
+
+      return customResponse({
+        res,
+        statusCode: 200,
+        data: metrics,
+        message: 'Métricas del dashboard obtenidas exitosamente',
+      });
+    } catch (error) {
+      console.error('Error en getAllDashboardMetrics:', error);
+      return handleHttp(res, 'ERROR_GET_DASHBOARD_METRICS', error);
+    }
+  }
 }
 
 export default new InvoiceController();

@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
 import { sequelize } from '../config/db';
 import { CreateInvoicePayload, InvoiceResponse } from '../interfaces/invoice.interface';
 import {
@@ -740,6 +740,447 @@ class InvoiceService {
       });
     } catch (error) {
       console.error('Error generando PDF:', error);
+      throw error;
+    }
+  }
+
+  // ==================== MÉTRICAS DEL DASHBOARD ====================
+
+  /**
+   * Obtiene las métricas del día actual (bruto, neto, comparación con ayer)
+   */
+  async getDailyMetrics() {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      // Ventas del día actual (sin devoluciones)
+      const todayInvoices = await Invoice.findAll({
+        where: {
+          date: {
+            [Op.gte]: today,
+            [Op.lt]: tomorrow,
+          },
+          is_return: false,
+        },
+        include: [
+          {
+            model: InvoiceDetail,
+            as: 'invoiceDetails',
+          },
+          {
+            model: PaymentInvoice,
+            as: 'payments',
+          },
+        ],
+      });
+
+      // Ventas de ayer (sin devoluciones)
+      const yesterdayInvoices = await Invoice.findAll({
+        where: {
+          date: {
+            [Op.gte]: yesterday,
+            [Op.lt]: today,
+          },
+          is_return: false,
+        },
+        include: [
+          {
+            model: InvoiceDetail,
+            as: 'invoiceDetails',
+          },
+        ],
+      });
+
+      // Calcular totales de hoy
+      const totalBrutoHoy = todayInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+
+      // Calcular total neto (sin IVA - asumiendo IVA del 19%)
+      const totalNetoHoy = Math.round(totalBrutoHoy / 1.19);
+
+      // Calcular totales de ayer
+      const totalBrutoAyer = yesterdayInvoices.reduce(
+        (sum, invoice) => sum + (invoice.total || 0),
+        0
+      );
+      const totalNetoAyer = Math.round(totalBrutoAyer / 1.19);
+
+      // Calcular porcentajes de cambio
+      const cambioPercentBruto =
+        totalBrutoAyer > 0 ? ((totalBrutoHoy - totalBrutoAyer) / totalBrutoAyer) * 100 : 0;
+      const cambioPercentNeto =
+        totalNetoAyer > 0 ? ((totalNetoHoy - totalNetoAyer) / totalNetoAyer) * 100 : 0;
+
+      // Calcular pagos del día por tipo
+      let pagoTransferencia = 0;
+      let pagoEfectivo = 0;
+
+      todayInvoices.forEach((invoice: any) => {
+        invoice.payments?.forEach((payment: any) => {
+          const amount = payment.amount || 0;
+          const bankId = payment.id_bank;
+
+          if (bankId === 'efectivo') {
+            pagoEfectivo += amount;
+          } else if (bankId !== 'pendiente' && bankId !== 'efectivo') {
+            pagoTransferencia += amount;
+          }
+        });
+      });
+
+      return {
+        totalBrutoHoy,
+        totalNetoHoy,
+        cambioPercentBruto: parseFloat(cambioPercentBruto.toFixed(2)),
+        cambioPercentNeto: parseFloat(cambioPercentNeto.toFixed(2)),
+        pagoTransferencia,
+        pagoEfectivo,
+      };
+    } catch (error) {
+      console.error('Error obteniendo métricas diarias:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las métricas del mes actual (bruto, neto, comparación con mes anterior)
+   */
+  async getMonthlyMetrics() {
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Ventas del mes actual (sin devoluciones)
+      const thisMonthInvoices = await Invoice.findAll({
+        where: {
+          date: {
+            [Op.gte]: firstDayOfMonth,
+            [Op.lt]: firstDayOfNextMonth,
+          },
+          is_return: false,
+        },
+        include: [
+          {
+            model: InvoiceDetail,
+            as: 'invoiceDetails',
+          },
+        ],
+      });
+
+      // Ventas del mes pasado (sin devoluciones)
+      const lastMonthInvoices = await Invoice.findAll({
+        where: {
+          date: {
+            [Op.gte]: firstDayOfLastMonth,
+            [Op.lt]: firstDayOfThisMonth,
+          },
+          is_return: false,
+        },
+        include: [
+          {
+            model: InvoiceDetail,
+            as: 'invoiceDetails',
+          },
+        ],
+      });
+
+      // Calcular totales del mes actual
+      const totalBrutoMes = thisMonthInvoices.reduce(
+        (sum, invoice) => sum + (invoice.total || 0),
+        0
+      );
+      const totalNetoMes = Math.round(totalBrutoMes / 1.19);
+      const totalIvaMes = totalBrutoMes - totalNetoMes;
+
+      // Calcular totales del mes pasado
+      const totalBrutoMesPasado = lastMonthInvoices.reduce(
+        (sum, invoice) => sum + (invoice.total || 0),
+        0
+      );
+      const totalNetoMesPasado = Math.round(totalBrutoMesPasado / 1.19);
+
+      // Calcular porcentajes de cambio
+      const cambioPercentBruto =
+        totalBrutoMesPasado > 0
+          ? ((totalBrutoMes - totalBrutoMesPasado) / totalBrutoMesPasado) * 100
+          : 0;
+      const cambioPercentNeto =
+        totalNetoMesPasado > 0
+          ? ((totalNetoMes - totalNetoMesPasado) / totalNetoMesPasado) * 100
+          : 0;
+
+      return {
+        ventaBrutaMensual: totalBrutoMes,
+        ventaNetaMensual: totalNetoMes,
+        totalIvaMes,
+        totalMes: totalBrutoMes,
+        cambioPercentBruto: parseFloat(cambioPercentBruto.toFixed(2)),
+        cambioPercentNeto: parseFloat(cambioPercentNeto.toFixed(2)),
+      };
+    } catch (error) {
+      console.error('Error obteniendo métricas mensuales:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las ventas diarias del mes actual (para gráfico de barras)
+   */
+  async getDailySalesOfMonth() {
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+      // Obtener todas las ventas del mes
+      const invoices = await Invoice.findAll({
+        where: {
+          date: {
+            [Op.gte]: firstDayOfMonth,
+            [Op.lt]: firstDayOfNextMonth,
+          },
+          is_return: false,
+        },
+        order: [['date', 'ASC']],
+      });
+
+      // Agrupar por día
+      const salesByDay: { [key: string]: { bruto: number; neto: number } } = {};
+
+      invoices.forEach((invoice) => {
+        if (invoice.date) {
+          const day = invoice.date.getDate();
+          const key = `${day}-${now.getMonth() + 1}`;
+
+          if (!salesByDay[key]) {
+            salesByDay[key] = { bruto: 0, neto: 0 };
+          }
+
+          const bruto = invoice.total || 0;
+          const neto = Math.round(bruto / 1.19);
+
+          salesByDay[key].bruto += bruto;
+          salesByDay[key].neto += neto;
+        }
+      });
+
+      // Convertir a array
+      const result = Object.entries(salesByDay).map(([date, totals]) => ({
+        date,
+        ventasBrutas: totals.bruto,
+        ventasNetas: totals.neto,
+      }));
+
+      return result;
+    } catch (error) {
+      console.error('Error obteniendo ventas diarias del mes:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las ventas diarias del mes con desglose por método de pago
+   */
+  async getDailySalesByPaymentMethod() {
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const firstDayOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+      // Obtener todas las ventas del mes con sus pagos
+      const invoices = await Invoice.findAll({
+        where: {
+          date: {
+            [Op.gte]: firstDayOfMonth,
+            [Op.lt]: firstDayOfNextMonth,
+          },
+          is_return: false,
+        },
+        include: [
+          {
+            model: PaymentInvoice,
+            as: 'payments',
+            include: [
+              {
+                model: Bank,
+                as: 'bank',
+              },
+            ],
+          },
+        ],
+        order: [['date', 'ASC']],
+      });
+
+      // Agrupar por día y método de pago
+      const salesByDay: {
+        [key: string]: {
+          [paymentMethod: string]: number;
+        };
+      } = {};
+
+      invoices.forEach((invoice: any) => {
+        if (invoice.date) {
+          const day = invoice.date.getDate();
+          const key = `${day}-${now.getMonth() + 1}`;
+
+          if (!salesByDay[key]) {
+            salesByDay[key] = {};
+          }
+
+          // Procesar cada pago
+          invoice.payments?.forEach((payment: any) => {
+            const amount = payment.amount || 0;
+            const bankId = payment.id_bank;
+
+            let paymentMethodName = 'Otros';
+
+            if (bankId === 'efectivo') {
+              paymentMethodName = 'Efectivo';
+            } else if (bankId === 'pendiente') {
+              paymentMethodName = 'Pendiente';
+            } else if (payment.bank?.name) {
+              paymentMethodName = payment.bank.name;
+            } else if (bankId && !isNaN(Number(bankId))) {
+              // Si es un ID numérico pero no hay banco asociado, marcarlo como "Transferencias"
+              paymentMethodName = 'Transferencias';
+            }
+
+            if (!salesByDay[key][paymentMethodName]) {
+              salesByDay[key][paymentMethodName] = 0;
+            }
+
+            salesByDay[key][paymentMethodName] += amount;
+          });
+        }
+      });
+
+      // Convertir a array
+      const result = Object.entries(salesByDay).map(([date, payments]) => ({
+        date,
+        payments,
+      }));
+
+      return result;
+    } catch (error) {
+      console.error('Error obteniendo ventas por método de pago:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene ventas mensuales comparativas (últimos 12 meses vs año anterior)
+   */
+  async getMonthlySalesComparison() {
+    try {
+      const now = new Date();
+      const results = [];
+
+      // Obtener últimos 12 meses
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const nextMonthDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+
+        // Mes del año anterior
+        const lastYearMonthDate = new Date(monthDate.getFullYear() - 1, monthDate.getMonth(), 1);
+        const lastYearNextMonthDate = new Date(
+          monthDate.getFullYear() - 1,
+          monthDate.getMonth() + 1,
+          1
+        );
+
+        // Ventas del mes actual
+        const currentMonthInvoices = await Invoice.findAll({
+          where: {
+            date: {
+              [Op.gte]: monthDate,
+              [Op.lt]: nextMonthDate,
+            },
+            is_return: false,
+          },
+        });
+
+        // Ventas del mismo mes año anterior
+        const lastYearMonthInvoices = await Invoice.findAll({
+          where: {
+            date: {
+              [Op.gte]: lastYearMonthDate,
+              [Op.lt]: lastYearNextMonthDate,
+            },
+            is_return: false,
+          },
+        });
+
+        const currentTotal = currentMonthInvoices.reduce(
+          (sum, invoice) => sum + (invoice.total || 0),
+          0
+        );
+        const lastYearTotal = lastYearMonthInvoices.reduce(
+          (sum, invoice) => sum + (invoice.total || 0),
+          0
+        );
+
+        const monthNames = [
+          'Enero',
+          'Febrero',
+          'Marzo',
+          'Abril',
+          'Mayo',
+          'Junio',
+          'Julio',
+          'Agosto',
+          'Septiembre',
+          'Octubre',
+          'Noviembre',
+          'Diciembre',
+        ];
+
+        results.push({
+          month: monthNames[monthDate.getMonth()],
+          year: monthDate.getFullYear(),
+          currentYear: currentTotal,
+          lastYear: lastYearTotal,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      console.error('Error obteniendo comparación mensual:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene todas las métricas del dashboard en una sola llamada
+   */
+  async getAllDashboardMetrics() {
+    try {
+      const [dailyMetrics, monthlyMetrics, dailySales, dailySalesByPayment, monthlySales] =
+        await Promise.all([
+          this.getDailyMetrics(),
+          this.getMonthlyMetrics(),
+          this.getDailySalesOfMonth(),
+          this.getDailySalesByPaymentMethod(),
+          this.getMonthlySalesComparison(),
+        ]);
+
+      return {
+        daily: dailyMetrics,
+        monthly: monthlyMetrics,
+        dailySalesChart: dailySales,
+        dailyPaymentChart: dailySalesByPayment,
+        monthlySalesChart: monthlySales,
+      };
+    } catch (error) {
+      console.error('Error obteniendo métricas del dashboard:', error);
       throw error;
     }
   }
